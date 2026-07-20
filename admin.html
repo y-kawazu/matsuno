@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>資料管理 | Matsuno Design</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/admin.js" defer></script>
+</head>
+<body class="admin-page">
+  <header class="site-header admin-header"><a class="brand" href="index.html#top" aria-label="Matsuno Design トップへ"><strong>Matsuno Design</strong><span>Store Architecture</span></a></header>
+  <main class="admin-main">
+    <section class="admin-login" id="admin-login"><div class="section-label"><span>ADMIN</span> MATERIALS</div><h1>資料管理</h1><form id="auth-form"><label for="access-token">GitHub アクセストークン</label><div class="token-row"><input id="access-token" name="access-token" type="password" autocomplete="off" required><button type="submit">認証する</button></div><p class="admin-message" id="auth-message" aria-live="polite"></p></form></section>
+    <section class="admin-workspace" id="admin-workspace" hidden><div class="admin-workspace-head"><div><p class="admin-account" id="admin-account"></p><h1>資料を追加</h1></div><button class="logout-button" type="button" id="logout-button">ログアウト</button></div><div class="upload-zone" id="upload-zone" role="button" tabindex="0" aria-label="資料を選択またはドラッグアンドドロップ"><input type="file" id="file-input" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip" multiple><span>資料をここへドロップ</span><small>PDF / Word / Excel / PowerPoint / ZIP</small></div><div class="upload-queue" id="upload-queue" aria-live="polite"></div></section>
+  </main>
+</body>
+</html>
