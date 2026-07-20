@@ -1,0 +1,61 @@
+name: Publish downloadable materials
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source files
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: source
+
+      - name: Check out published site
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: public
+          fetch-depth: 0
+
+      - name: Copy documents and publish the manifest
+        run: |
+          rsync -a --delete --exclude '.git' --exclude '.github' --exclude 'admin-downloads' source/ public/
+          rm -rf public/assets/downloads
+          mkdir -p public/assets/downloads
+          cp -R source/admin-downloads/. public/assets/downloads/
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path('source/admin-downloads')
+          public_root = Path('public/assets/downloads')
+          allowed = {'.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip'}
+          files = []
+          for path in sorted(root.rglob('*')):
+              if not path.is_file() or path.suffix.lower() not in allowed:
+                  continue
+              relative = path.relative_to(root).as_posix()
+              files.append({
+                  'file': relative,
+                  'title': path.stem.replace('_', ' ').replace('-', ' '),
+                  'extension': path.suffix.lower(),
+                  'size': path.stat().st_size,
+              })
+          (public_root / 'manifest.json').write_text(
+              json.dumps(files, ensure_ascii=False, indent=2), encoding='utf-8'
+          )
+          PY
+          git -C public config user.name 'github-actions[bot]'
+          git -C public config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C public add assets/downloads
+          git -C public diff --cached --quiet || git -C public commit -m 'Publish downloadable materials'
+          git -C public push origin gh-pages
