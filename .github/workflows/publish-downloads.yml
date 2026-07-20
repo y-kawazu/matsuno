@@ -56,6 +56,6 @@ jobs:
           PY
           git -C public config user.name 'github-actions[bot]'
           git -C public config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git -C public add assets/downloads
+          git -C public add -A
           git -C public diff --cached --quiet || git -C public commit -m 'Publish downloadable materials'
           git -C public push origin gh-pages
