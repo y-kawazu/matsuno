@@ -28,7 +28,7 @@ jobs:
 
       - name: Copy documents and publish the manifest
         run: |
-          rsync -a --delete --exclude '.git' --exclude '.github' --exclude 'admin-downloads' source/ public/
+          rsync -ac --delete --exclude '.git' --exclude '.github' --exclude 'admin-downloads' source/ public/
           rm -rf public/assets/downloads
           mkdir -p public/assets/downloads
           cp -R source/admin-downloads/. public/assets/downloads/
