@@ -1,15 +1,22 @@
 const downloadList = document.querySelector('#download-list');
-const downloadBase = downloadList?.dataset.downloadBase;
+const appsScriptUrl = downloadList?.dataset.appsScriptUrl;
 
 const formatBytes = (bytes) => {
-  if (!Number.isFinite(bytes) || bytes <= 0) return '';
-  if (bytes < 1024 * 1024) return `${Math.ceil(bytes / 1024)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  const size = Number(bytes);
+  if (!Number.isFinite(size) || size <= 0) return '';
+  if (size < 1024 * 1024) return `${Math.ceil(size / 1024)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-const buildFileUrl = (file) => `${downloadBase}/${file.split('/').map(encodeURIComponent).join('/')}`;
+const fileType = (file) => {
+  const extension = file.name?.split('.').pop();
+  return extension ? extension.toUpperCase() : 'FILE';
+};
+
+const downloadUrl = (file) => `https://drive.google.com/uc?export=download&id=${encodeURIComponent(file.id)}`;
 
 const renderDownloads = (files) => {
+  if (!downloadList || !Array.isArray(files)) return;
   downloadList.replaceChildren();
 
   if (!files.length) {
@@ -23,29 +30,40 @@ const renderDownloads = (files) => {
   files.forEach((file) => {
     const card = document.createElement('article');
     card.className = 'download-card';
+
     const copy = document.createElement('div');
     const label = document.createElement('p');
     label.className = 'download-card-label';
-    label.textContent = file.extension.replace('.', '').toUpperCase();
+    label.textContent = fileType(file);
     const title = document.createElement('h2');
-    title.textContent = file.title;
+    title.textContent = file.name || '資料';
     const detail = document.createElement('p');
     detail.textContent = formatBytes(file.size);
     copy.append(label, title, detail);
 
     const link = document.createElement('a');
     link.className = 'download-button';
-    link.href = buildFileUrl(file.file);
-    link.download = '';
-    link.innerHTML = 'ダウンロード <span>↓</span>';
+    link.href = downloadUrl(file);
+    link.innerHTML = 'ダウンロード<span>→</span>';
     card.append(copy, link);
     downloadList.append(card);
   });
 };
 
-if (downloadList && downloadBase) {
-  fetch(`${downloadBase}/manifest.json`, { cache: 'no-store' })
-    .then((response) => (response.ok ? response.json() : []))
-    .then((files) => renderDownloads(Array.isArray(files) ? files : []))
-    .catch(() => renderDownloads([]));
+if (downloadList && appsScriptUrl) {
+  const callbackName = `matsunoDownloads${Date.now()}`;
+  const script = document.createElement('script');
+
+  window[callbackName] = (payload) => {
+    renderDownloads(payload?.files);
+    script.remove();
+    delete window[callbackName];
+  };
+
+  script.src = `${appsScriptUrl}?callback=${callbackName}&_=${Date.now()}`;
+  script.onerror = () => {
+    script.remove();
+    delete window[callbackName];
+  };
+  document.head.append(script);
 }
