@@ -55,7 +55,14 @@ const renderBlogList = (posts) => {
 
 const sanitizeContent = (html) => {
   const template = document.createElement('template');
-  template.innerHTML = html || '';
+  const escapedHtml = /&lt;\/?[a-z]/i.test(html || '');
+  if (escapedHtml) {
+    const decoder = document.createElement('textarea');
+    decoder.innerHTML = html;
+    template.innerHTML = decoder.value;
+  } else {
+    template.innerHTML = html || '';
+  }
   template.content.querySelectorAll('script, iframe, object, embed, form').forEach((node) => node.remove());
   template.content.querySelectorAll('*').forEach((node) => {
     [...node.attributes].forEach((attribute) => {
