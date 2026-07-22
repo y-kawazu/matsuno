@@ -61,16 +61,42 @@ const renderBlogList = (posts) => {
   });
 };
 
+const mediaUrl = (value) => {
+  try {
+    const url = new URL(value);
+    return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+  } catch {
+    return '';
+  }
+};
+
+const renderStoredMedia = (html) => html
+  .replace(/画像:\s*(https?:\/\/[^\s<]+)(?:\s*<br>\s*)?リンク:\s*(https?:\/\/[^\s<]+)/g, (_, image, link) => {
+    const imageUrl = mediaUrl(image);
+    const linkUrl = mediaUrl(link);
+    if (!imageUrl) return '';
+    const imageTag = `<img src="${imageUrl}" alt="ブログ記事の画像">`;
+    return linkUrl ? `<a href="${linkUrl}" target="_blank" rel="noopener noreferrer">${imageTag}</a>` : imageTag;
+  })
+  .replace(/画像:\s*(https?:\/\/[^\s<]+)/g, (_, image) => {
+    const imageUrl = mediaUrl(image);
+    return imageUrl ? `<img src="${imageUrl}" alt="ブログ記事の画像">` : '';
+  })
+  .replace(/リンク:\s*(https?:\/\/[^\s<]+)/g, (_, link) => {
+    const linkUrl = mediaUrl(link);
+    return linkUrl ? `<a href="${linkUrl}" target="_blank" rel="noopener noreferrer">${linkUrl}</a>` : '';
+  });
+
 const sanitizeContent = (html) => {
   const template = document.createElement('template');
   const escapedHtml = /&lt;\/?[a-z]/i.test(html || '');
+  let content = html || '';
   if (escapedHtml) {
     const decoder = document.createElement('textarea');
-    decoder.innerHTML = html;
-    template.innerHTML = decoder.value;
-  } else {
-    template.innerHTML = html || '';
+    decoder.innerHTML = content;
+    content = decoder.value;
   }
+  template.innerHTML = renderStoredMedia(content);
   template.content.querySelectorAll('script, iframe, object, embed, form').forEach((node) => node.remove());
   template.content.querySelectorAll('*').forEach((node) => {
     [...node.attributes].forEach((attribute) => {
