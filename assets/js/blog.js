@@ -30,6 +30,14 @@ const makeArticleLink = (post) => {
   return link;
 };
 
+const readableText = (value) => {
+  const decoder = document.createElement('textarea');
+  decoder.innerHTML = value || '';
+  const template = document.createElement('template');
+  template.innerHTML = decoder.value;
+  return (template.content.textContent || '').replace(/\s+/g, ' ').trim();
+};
+
 const renderBlogList = (posts) => {
   if (!blogList || !Array.isArray(posts)) return;
   blogList.replaceChildren();
@@ -47,7 +55,7 @@ const renderBlogList = (posts) => {
     const title = document.createElement('h2');
     title.textContent = post.title || 'セガールの独り言';
     const excerpt = document.createElement('p');
-    excerpt.textContent = post.excerpt || '';
+    excerpt.textContent = readableText(post.excerpt || post.content || '').slice(0, 150);
     article.append(date, title, excerpt, makeArticleLink(post));
     blogList.append(article);
   });
