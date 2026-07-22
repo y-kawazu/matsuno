@@ -96,7 +96,9 @@ const renderBlogPost = (post) => {
   legacy.target = '_blank';
   legacy.rel = 'noopener noreferrer';
   legacy.textContent = '旧ブログで開く →';
-  blogPost.replaceChildren(date, title, content, legacy);
+  const returnLink = document.querySelector('.blog-main .page-return');
+  const postParts = returnLink ? [date, title, content, returnLink, legacy] : [date, title, content, legacy];
+  blogPost.replaceChildren(...postParts);
 };
 
 if (blogList && blogEndpoint) {
