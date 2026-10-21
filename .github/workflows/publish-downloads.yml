@@ -8,6 +8,11 @@ on:
 
 permissions:
   contents: write
+  pages: write
+
+concurrency:
+  group: matsuno-pages-publish
+  cancel-in-progress: false
 
 jobs:
   publish:
@@ -25,6 +30,9 @@ jobs:
           ref: gh-pages
           path: public
           fetch-depth: 0
+
+      - name: Refresh public blog data
+        run: python3 source/scripts/sync_blog.py
 
       - name: Copy documents and publish the manifest
         run: |
@@ -59,3 +67,8 @@ jobs:
           git -C public add -A
           git -C public diff --cached --quiet || git -C public commit -m 'Publish downloadable materials'
           git -C public push origin gh-pages
+
+      - name: Request GitHub Pages build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST repos/${{ github.repository }}/pages/builds

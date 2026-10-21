@@ -1,5 +1,18 @@
 # MATSUNO renewal workspace
 
+## Blog publishing
+
+The public blog is managed in the KawazuNext Google Sheet and read through
+the endpoint in `blog.html` and `blog-post.html`. Only published articles are
+exported to `assets/data/blog.json` by `scripts/sync_blog.py`.
+
+Pages render that same-origin data first and attempt a live anonymous refresh.
+The `Sync public blog from Google Drive` workflow runs every 15 minutes (subject
+to GitHub scheduling delays) or can be started manually. It updates `gh-pages`
+and requests a Pages build when article data changes. Source publishing also
+refreshes article data before deploying. Google Sheet edits remain the source
+of truth; no private spreadsheet credentials are stored in this repository.
+
 This folder is prepared for rebuilding the public site at:
 
 https://matsuno.tv/

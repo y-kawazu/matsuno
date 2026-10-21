@@ -1,0 +1,53 @@
+name: Sync public blog from Google Drive
+
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: matsuno-pages-publish
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: source
+      - uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: public
+          fetch-depth: 0
+      - name: Use last published snapshot
+        run: |
+          if [ -f public/assets/data/blog.json ]; then
+            cp public/assets/data/blog.json source/assets/data/blog.json
+          fi
+      - name: Read public articles
+        run: python3 source/scripts/sync_blog.py
+      - name: Publish article data
+        run: |
+          mkdir -p public/assets/data
+          cp source/assets/data/blog.json public/assets/data/blog.json
+          git -C public config user.name 'github-actions[bot]'
+          git -C public config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C public add assets/data/blog.json
+          if ! git -C public diff --cached --quiet; then
+            git -C public commit -m 'Sync public blog articles from Google Drive'
+            git -C public pull --rebase origin gh-pages
+            git -C public push origin gh-pages
+            echo 'BLOG_CHANGED=true' >> "$GITHUB_ENV"
+          fi
+      - name: Request GitHub Pages build
+        if: env.BLOG_CHANGED == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST repos/${{ github.repository }}/pages/builds
