@@ -2,24 +2,53 @@ const blogList = document.querySelector('#blog-list');
 const blogPost = document.querySelector('#blog-post');
 const blogEndpoint = (blogList || blogPost)?.dataset.blogEndpoint;
 
-const loadJsonp = (params, onSuccess, onError) => {
-  const callback = `matsunoBlog${Date.now()}`;
-  const script = document.createElement('script');
-  const query = new URLSearchParams({ ...params, callback, _: Date.now().toString() });
-
-  window[callback] = (payload) => {
+const loadBlog = async (params, onSuccess, onError) => {
+  let displayed = false;
+  const display = (payload) => {
+    if (payload?.error) throw new Error(payload.error);
+    if (params.id) {
+      if (!Object.prototype.hasOwnProperty.call(payload || {}, 'post')) throw new Error('Invalid article response');
+    } else if (!Array.isArray(payload?.posts)) {
+      throw new Error('Invalid article list');
+    }
     onSuccess(payload);
-    script.remove();
-    delete window[callback];
+    displayed = true;
+  };
+  const readJson = async (url, timeout) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    try {
+      const response = await fetch(url, { credentials: 'omit', cache: 'no-store', signal: controller.signal });
+      if (!response.ok) throw new Error(`Blog request failed (${response.status})`);
+      return await response.json();
+    } finally {
+      clearTimeout(timer);
+    }
   };
 
-  script.src = `${blogEndpoint}?${query.toString()}`;
-  script.onerror = () => {
-    onError();
-    script.remove();
-    delete window[callback];
-  };
-  document.head.append(script);
+  // This same-origin copy is generated from the public Sheet feed. It remains
+  // available when Google redirects a visitor to the wrong signed-in account.
+  try {
+    const snapshot = await readJson(new URL('assets/data/blog.json', document.baseURI), 8000);
+    if (!Array.isArray(snapshot.posts)) throw new Error('Invalid published article data');
+    display(params.id ? { post: snapshot.posts.find(post => post.id === params.id) || null } : snapshot);
+  } catch (error) {
+    console.warn('Published blog data could not be read.', error);
+  }
+
+  // When possible, refresh immediately from Drive without sending Google
+  // account cookies. Scheduled publishing refreshes the same-origin copy too.
+  if (blogEndpoint) {
+    try {
+      const url = new URL(blogEndpoint);
+      Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
+      url.searchParams.set('_', Date.now().toString());
+      display(await readJson(url, 8000));
+    } catch (error) {
+      console.warn('Live blog refresh unavailable; keeping published articles.', error);
+    }
+  }
+  if (!displayed) onError();
 };
 
 const makeArticleLink = (post) => {
@@ -107,7 +136,11 @@ const sanitizeContent = (html) => {
 };
 
 const renderBlogPost = (post) => {
-  if (!blogPost || !post) return;
+  if (!blogPost) return;
+  if (!post) {
+    blogPost.innerHTML = '<p class="download-status">この記事は現在公開されていません。</p>';
+    return;
+  }
   const date = document.createElement('p');
   date.className = 'download-card-label';
   date.textContent = post.date || '';
@@ -128,7 +161,7 @@ const renderBlogPost = (post) => {
 };
 
 if (blogList && blogEndpoint) {
-  loadJsonp(
+  loadBlog(
     { type: 'blog' },
     (payload) => renderBlogList(payload?.posts),
     () => { blogList.innerHTML = '<p class="download-status">記事を読み込めませんでした。時間をおいて再度お試しください。</p>'; }
@@ -140,7 +173,7 @@ if (blogPost && blogEndpoint) {
   if (!id) {
     blogPost.innerHTML = '<p class="download-status">記事が指定されていません。</p>';
   } else {
-    loadJsonp(
+    loadBlog(
       { type: 'blog', id },
       (payload) => renderBlogPost(payload?.post),
       () => { blogPost.innerHTML = '<p class="download-status">記事を読み込めませんでした。時間をおいて再度お試しください。</p>'; }
