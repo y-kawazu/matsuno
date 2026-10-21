@@ -13,6 +13,11 @@ and requests a Pages build when article data changes. Source publishing also
 refreshes article data before deploying. Google Sheet edits remain the source
 of truth; no private spreadsheet credentials are stored in this repository.
 
+Temporary timeouts and server errors are retried up to five times with
+increasing request timeouts (45 to 120 seconds) and delays (5 to 60 seconds).
+If all attempts fail, publishing stops without overwriting existing articles.
+Permission/configuration errors still fail visibly rather than being hidden.
+
 This folder is prepared for rebuilding the public site at:
 
 https://matsuno.tv/

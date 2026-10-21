@@ -1,30 +1,47 @@
 """Publish only public articles from the configured Google Apps Script feed."""
 from datetime import datetime, timezone
+from http.client import IncompleteRead, RemoteDisconnected
 import json
 from pathlib import Path
 import re
 import time
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
+REQUEST_TIMEOUTS = (45, 60, 90, 120, 120)
+RETRY_DELAYS = (5, 15, 30, 60)
+RETRYABLE_HTTP_CODES = {408, 429, 500, 502, 503, 504}
+
+def read_feed(url):
+    """Retry temporary network/server failures, but expose permanent errors."""
+    for attempt, timeout in enumerate(REQUEST_TIMEOUTS):
+        try:
+            request = Request(url, headers={'User-Agent': 'MatsunoBlogPublisher/1.0'})
+            with urlopen(request, timeout=timeout) as response:
+                return json.load(response)
+        except (HTTPError, URLError, TimeoutError, ConnectionError,
+                IncompleteRead, RemoteDisconnected, json.JSONDecodeError) as error:
+            if isinstance(error, HTTPError) and error.code not in RETRYABLE_HTTP_CODES:
+                raise
+            if attempt == len(REQUEST_TIMEOUTS) - 1:
+                print('Article feed is still unavailable after 5 attempts; '
+                      'no published data has been changed.', flush=True)
+                raise
+            delay = RETRY_DELAYS[attempt]
+            print(f'Temporary article feed failure ({type(error).__name__}); '
+                  f'retrying {attempt + 2}/{len(REQUEST_TIMEOUTS)} in {delay}s '
+                  f'with a {REQUEST_TIMEOUTS[attempt + 1]}s timeout.', flush=True)
+            time.sleep(delay)
 
 def sync():
     page = (ROOT / 'blog.html').read_text(encoding='utf-8')
     endpoint = re.search(r'data-blog-endpoint="(https://script\.google\.com/macros/s/[^"/]+/exec)"', page)
     if not endpoint:
         raise ValueError('No public blog endpoint configured')
-    for attempt in range(3):
-        try:
-            request = Request(endpoint.group(1) + '?type=blog', headers={'User-Agent': 'MatsunoBlogPublisher/1.0'})
-            with urlopen(request, timeout=30) as response:
-                payload = json.load(response)
-            break
-        except Exception:
-            if attempt == 2:
-                raise
-            time.sleep(2 ** attempt)
-    if payload.get('error') or not isinstance(payload.get('posts'), list):
+    payload = read_feed(endpoint.group(1) + '?type=blog')
+    if not isinstance(payload, dict) or payload.get('error') or not isinstance(payload.get('posts'), list):
         raise ValueError('Public article feed returned an error; keeping the last published data')
     posts = []
     seen = set()
