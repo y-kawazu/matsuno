@@ -1,8 +1,5 @@
-"""Snapshot the folder-scoped, public-only Drive download feed atomically."""
-from datetime import datetime, timezone
-import json
+"""Legacy validator retained for old data; public download sync is disabled."""
 import re
-from sync_blog import ROOT, read_feed
 
 
 def validate(payload):
@@ -27,21 +24,8 @@ def validate(payload):
 
 
 def sync():
-    page = (ROOT / 'download.html').read_text(encoding='utf-8')
-    endpoint = re.search(r'data-apps-script-url="(https://script\.google\.com/macros/s/[^"/]+/exec)"', page)
-    if not endpoint:
-        raise ValueError('No download endpoint configured')
-    files = validate(read_feed(endpoint.group(1)))
-    target = ROOT / 'assets/data/downloads.json'
-    if target.exists() and json.loads(target.read_text(encoding='utf-8')).get('files') == files:
-        print(f'No changes: {len(files)} public download files')
-        return
-    result = {'updatedAt': datetime.now(timezone.utc).isoformat(), 'files': files}
-    target.parent.mkdir(parents=True, exist_ok=True)
-    staging = target.with_suffix('.tmp')
-    staging.write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-    staging.replace(target)
-    print(f'Updated {len(files)} public download files')
+    # Password-protected downloads must never create a public metadata snapshot.
+    print('Download snapshots disabled: authentication is required')
 
 
 if __name__ == '__main__':
