@@ -35,6 +35,9 @@ jobs:
       - name: Refresh public blog data
         run: python3 source/scripts/sync_blog.py
 
+      - name: Refresh public download data
+        run: python3 source/scripts/sync_downloads.py
+
       - name: Copy documents and publish the manifest
         run: |
           rsync -ac --delete --exclude '.git' --exclude '.github' --exclude 'admin-downloads' source/ public/

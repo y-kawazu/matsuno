@@ -13,7 +13,13 @@ const fileType = (file) => {
   return extension ? extension.toUpperCase() : 'FILE';
 };
 
-const downloadUrl = (file) => `https://drive.google.com/uc?export=download&id=${encodeURIComponent(file.id)}`;
+const downloadUrl = (file) => {
+  const url = new URL('https://drive.google.com/uc');
+  url.searchParams.set('export', 'download');
+  url.searchParams.set('id', file.id);
+  if (file.resourceKey) url.searchParams.set('resourcekey', file.resourceKey);
+  return url.href;
+};
 
 const renderDownloads = (files) => {
   if (!downloadList || !Array.isArray(files)) return;
@@ -50,20 +56,27 @@ const renderDownloads = (files) => {
   });
 };
 
-if (downloadList && appsScriptUrl) {
-  const callbackName = `matsunoDownloads${Date.now()}`;
-  const script = document.createElement('script');
-
-  window[callbackName] = (payload) => {
-    renderDownloads(payload?.files);
-    script.remove();
-    delete window[callbackName];
-  };
-
-  script.src = `${appsScriptUrl}?callback=${callbackName}&_=${Date.now()}`;
-  script.onerror = () => {
-    script.remove();
-    delete window[callbackName];
-  };
-  document.head.append(script);
+if (downloadList) {
+  (async () => {
+    let rendered = false;
+    const load = async (url) => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 10000);
+      try {
+        const response = await fetch(url, { credentials: 'omit', cache: 'no-store', signal: controller.signal });
+        if (!response.ok) throw new Error('Download feed unavailable');
+        const payload = await response.json();
+        if (payload.error || !Array.isArray(payload.files)) throw new Error('Invalid download feed');
+        renderDownloads(payload.files);
+        rendered = true;
+      } finally {
+        clearTimeout(timer);
+      }
+    };
+    try { await load(downloadList.dataset.snapshotUrl || 'assets/data/downloads.json'); } catch (_) { /* Try live feed next. */ }
+    if (appsScriptUrl) {
+      try { await load(appsScriptUrl); } catch (_) { /* Keep the published snapshot on temporary failures. */ }
+    }
+    if (!rendered) downloadList.textContent = '資料を読み込めませんでした。時間をおいて再度お試しください。';
+  })();
 }
