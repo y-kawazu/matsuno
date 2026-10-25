@@ -6,8 +6,9 @@
   <meta name="description" content="マツノデザイン店舗建築株式会社の会社案内・サービス資料をダウンロードいただけます。">
   <title>資料ダウンロード | Matsuno Design</title>
   <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/download-auth.css">
   <script src="assets/js/site.js?v=20260722-2" defer></script>
-  <script src="assets/js/downloads.js?v=20261025" defer></script>
+  <script src="assets/js/protected-downloads.js?v=20261025-1" defer></script>
 </head>
 <body class="download-page">
   <header class="site-header scrolled" id="header">
@@ -19,10 +20,18 @@
   </header>
   <main class="download-main">
     <div class="download-intro"><div class="section-label"><span>DOWNLOAD</span> COMPANY PROFILE</div><h1>資料ダウンロード</h1><p>マツノデザイン店舗建築の会社案内・サービス資料をダウンロードいただけます。</p></div>
-    <section class="download-list" id="download-list" data-apps-script-url="https://script.google.com/macros/s/AKfycbwwnalqyetd1b_sdiHh2q-pTs6Og5zAaBVChJBzhvgrnN00tzhmgsMkyWp75jIfwZzf8g/exec" aria-label="ダウンロード資料">
-      <p class="download-status">資料を読み込んでいます。</p>
+    <form class="download-auth" id="download-login">
+      <p>資料をご覧になるには、ご案内した共通パスワードを入力してください。</p>
+      <label for="download-password">資料ダウンロード用パスワード</label>
+      <input id="download-password" type="password" autocomplete="off" required maxlength="200">
+      <button type="submit">資料を表示する →</button>
+    </form>
+    <p id="download-auth-status" role="status" aria-live="polite"></p>
+    <button id="download-logout" type="button" hidden>ログアウト</button>
+    <noscript><p>資料の認証にはJavaScriptを有効にしてください。</p></noscript>
+    <section class="download-list" id="download-list" data-apps-script-url="https://script.google.com/macros/s/AKfycbwwnalqyetd1b_sdiHh2q-pTs6Og5zAaBVChJBzhvgrnN00tzhmgsMkyWp75jIfwZzf8g/exec" aria-label="ダウンロード資料" hidden>
     </section>
-    <section class="admin-entry" id="admin-access"><p>資料を追加・削除する管理者の方はこちら</p><a class="drive-admin-button" href="https://drive.google.com/drive/folders/1VQ-jfoNoYPGyvzFnvd0Tj-2dZ4jY49-u" target="_blank" rel="noopener noreferrer">Google Driveで資料を管理<span>→</span></a><small>Googleにログインしている管理者のみ、資料の追加・削除ができます。公開設定の資料のみサイトに表示されます。</small></section><a class="page-return" href="index.html#top">トップへ戻る <span>←</span></a>
+    <section class="admin-entry" id="admin-access"><p>資料を追加・削除する管理者の方はこちら</p><a class="drive-admin-button" href="https://drive.google.com/drive/folders/1VQ-jfoNoYPGyvzFnvd0Tj-2dZ4jY49-u" target="_blank" rel="noopener noreferrer">Google Driveで資料を管理<span>→</span></a><small>管理者のGoogleアカウントで追加・削除できます。フォルダーと資料は「制限付き」のまま運用してください。</small></section><a class="page-return" href="index.html#top">トップへ戻る <span>←</span></a>
   </main>
   <footer><a class="brand footer-brand" href="index.html#top"><strong>Matsuno Design</strong><span>Store Architecture</span></a><div class="footer-info"><p>マツノデザイン店舗建築株式会社<br>福岡県福岡市</p><p class="copyright">© MATSUNO DESIGN. ALL RIGHTS RESERVED.</p></div></footer>
 </body>

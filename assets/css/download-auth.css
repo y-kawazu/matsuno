@@ -1,0 +1,9 @@
+[hidden] { display: none !important; }
+.download-auth { max-width: 620px; margin: 0 auto 36px; }
+.download-auth label { display: block; margin-bottom: 12px; }
+.download-auth input { display: block; width: 100%; padding: 15px; margin-bottom: 16px; border: 1px solid #aaa; background: #fff; font: inherit; box-sizing: border-box; }
+.download-auth button, #download-logout { cursor: pointer; font: inherit; padding: 14px 24px; border: 1px solid #222; background: #1c2120; color: #fff; }
+.download-auth p { margin-bottom: 20px; }
+#download-auth-status { min-height: 1.5em; margin: 20px 0; }
+.download-card button { cursor: pointer; border: 0; font: inherit; }
+.download-card button:disabled, .download-auth button:disabled { opacity: .6; cursor: wait; }

@@ -35,37 +35,10 @@ jobs:
       - name: Refresh public blog data
         run: python3 source/scripts/sync_blog.py
 
-      - name: Refresh public download data
-        run: python3 source/scripts/sync_downloads.py
-
-      - name: Copy documents and publish the manifest
+      - name: Publish site without unprotected document copies
         run: |
-          rsync -ac --delete --exclude '.git' --exclude '.github' --exclude 'admin-downloads' source/ public/
+          rsync -ac --delete --exclude '.git' --exclude '.github' --exclude 'admin-downloads' --exclude 'assets/downloads' source/ public/
           rm -rf public/assets/downloads
-          mkdir -p public/assets/downloads
-          cp -R source/admin-downloads/. public/assets/downloads/
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          root = Path('source/admin-downloads')
-          public_root = Path('public/assets/downloads')
-          allowed = {'.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip'}
-          files = []
-          for path in sorted(root.rglob('*')):
-              if not path.is_file() or path.suffix.lower() not in allowed:
-                  continue
-              relative = path.relative_to(root).as_posix()
-              files.append({
-                  'file': relative,
-                  'title': path.stem.replace('_', ' ').replace('-', ' '),
-                  'extension': path.suffix.lower(),
-                  'size': path.stat().st_size,
-              })
-          (public_root / 'manifest.json').write_text(
-              json.dumps(files, ensure_ascii=False, indent=2), encoding='utf-8'
-          )
-          PY
           git -C public config user.name 'github-actions[bot]'
           git -C public config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git -C public add -A
